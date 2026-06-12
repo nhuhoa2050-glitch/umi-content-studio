@@ -1,4 +1,4 @@
-// Umi Content Studio — frontend logic
+// Umi Content Studio — frontend logic (multi-skill)
 const $ = (id) => document.getElementById(id);
 
 const els = {
@@ -13,28 +13,15 @@ const els = {
   errorBox: $("errorBox"),
   output: $("output"),
   loadingState: $("loadingState"),
-  // skill picker
+  loadingCycle: $("loadingCycle"),
   skillGroups: $("skillGroups"),
   selectedSkill: $("selectedSkill"),
-  ssIcon: $("ssIcon"),
   ssName: $("ssName"),
   ssHint: $("ssHint"),
-  // plan view
-  planView: $("planView"),
-  summaryCard: $("summaryCard"),
-  panelScripts: $("panel-scripts"),
-  panelAudience: $("panel-audience"),
-  panelChannels: $("panel-channels"),
-  // markdown view
-  mdView: $("mdView"),
-  markdownBody: $("markdownBody"),
-  mdIcon: $("mdIcon"),
-  mdTitle: $("mdTitle"),
-  // actions
-  copyBtn: $("copyBtn"),
-  downloadBtn: $("downloadBtn"),
+  resultsContainer: $("resultsContainer"),
+  copyAllBtn: $("copyAllBtn"),
+  downloadAllBtn: $("downloadAllBtn"),
   againBtn: $("againBtn"),
-  // settings
   settingsCard: document.querySelector(".settings-card"),
   settingsToggle: $("settingsToggle"),
   keyStatus: $("keyStatus"),
@@ -44,9 +31,9 @@ const els = {
 };
 
 let imageDataUrl = null;
-let lastResult = null; // {type, plan|markdown, skill}
 let SKILLS = [];
-let selectedSkillId = "chot-don";
+const selectedIds = new Set(["chot-don"]);
+let lastResults = []; // [{skill, markdown}]
 
 // ---------- API key ----------
 const KEY_STORE = "umi_apiKey";
@@ -73,7 +60,7 @@ els.saveKeyBtn.addEventListener("click", () => {
 els.apiKey.addEventListener("input", updateKeyStatus);
 loadKey();
 
-// ---------- Skill picker ----------
+// ---------- Skill picker (multi-select) ----------
 const STAGE_ORDER = ["Chốt đơn ⭐", "Nền tảng", "Lập kế hoạch", "Sản xuất", "Brief visual", "Đo lường"];
 
 async function loadSkills() {
@@ -82,8 +69,7 @@ async function loadSkills() {
     const data = await resp.json();
     SKILLS = data.skills || [];
     renderSkillPicker();
-    const def = SKILLS.find((s) => s.id === selectedSkillId) || SKILLS[0];
-    if (def) selectSkill(def.id);
+    syncSelection();
   } catch {
     els.skillGroups.innerHTML = `<p class="hint" style="text-align:left">Không tải được danh sách skill. Tải lại trang.</p>`;
   }
@@ -91,9 +77,7 @@ async function loadSkills() {
 
 function renderSkillPicker() {
   const groups = {};
-  SKILLS.forEach((s) => {
-    (groups[s.stage] = groups[s.stage] || []).push(s);
-  });
+  SKILLS.forEach((s) => (groups[s.stage] = groups[s.stage] || []).push(s));
   const stages = Object.keys(groups).sort(
     (a, b) => (STAGE_ORDER.indexOf(a) + 1 || 99) - (STAGE_ORDER.indexOf(b) + 1 || 99)
   );
@@ -101,12 +85,15 @@ function renderSkillPicker() {
     .map(
       (stage) => `
     <div class="skill-group">
-      <div class="skill-group-title">${esc(stage)}</div>
+      <div class="skill-group-row">
+        <div class="skill-group-title">${esc(stage)}</div>
+        <button class="group-toggle" type="button" data-stage="${esc(stage)}">Chọn cả nhóm</button>
+      </div>
       <div class="skill-chips">
         ${groups[stage]
           .map(
-            (s) => `<button class="skill-chip" type="button" data-id="${esc(s.id)}">
-              <span class="sc-icon">${esc(s.icon || "📄")}</span><span>${esc(s.name)}</span>
+            (s) => `<button class="skill-chip" type="button" data-id="${esc(s.id)}" title="${esc(s.hint || "")}">
+              <span class="sc-check">✓</span><span class="sc-icon">${esc(s.icon || "📄")}</span><span>${esc(s.name)}</span>
             </button>`
           )
           .join("")}
@@ -116,23 +103,43 @@ function renderSkillPicker() {
     .join("");
 
   els.skillGroups.querySelectorAll(".skill-chip").forEach((btn) => {
-    btn.addEventListener("click", () => selectSkill(btn.dataset.id));
+    btn.addEventListener("click", () => toggleSkill(btn.dataset.id));
+  });
+  els.skillGroups.querySelectorAll(".group-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => toggleGroup(btn.dataset.stage));
   });
 }
 
-function selectSkill(id) {
-  const skill = SKILLS.find((s) => s.id === id);
-  if (!skill) return;
-  selectedSkillId = id;
+function toggleSkill(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  syncSelection();
+}
+function toggleGroup(stage) {
+  const ids = SKILLS.filter((s) => s.stage === stage).map((s) => s.id);
+  const allOn = ids.every((id) => selectedIds.has(id));
+  ids.forEach((id) => (allOn ? selectedIds.delete(id) : selectedIds.add(id)));
+  syncSelection();
+}
+
+function syncSelection() {
   els.skillGroups.querySelectorAll(".skill-chip").forEach((b) => {
-    b.classList.toggle("selected", b.dataset.id === id);
+    b.classList.toggle("selected", selectedIds.has(b.dataset.id));
   });
-  els.ssIcon.textContent = skill.icon || "📄";
-  els.ssName.textContent = skill.name;
-  els.ssHint.textContent = skill.hint || "";
+  els.skillGroups.querySelectorAll(".group-toggle").forEach((btn) => {
+    const ids = SKILLS.filter((s) => s.stage === btn.dataset.stage).map((s) => s.id);
+    const allOn = ids.length && ids.every((id) => selectedIds.has(id));
+    btn.textContent = allOn ? "Bỏ chọn nhóm" : "Chọn cả nhóm";
+    btn.classList.toggle("on", allOn);
+  });
+  const chosen = SKILLS.filter((s) => selectedIds.has(s.id));
+  const n = chosen.length;
   els.selectedSkill.hidden = false;
-  els.productInfo.placeholder = skill.hint ? `Gợi ý nhập: ${skill.hint}` : "Mô tả sản phẩm / ngữ cảnh…";
-  els.generateBtn.querySelector(".btn-text").textContent = `✨ Chạy: ${skill.name}`;
+  els.ssName.textContent = `Đã chọn ${n} skill`;
+  els.ssHint.textContent = n
+    ? chosen.map((s) => `${s.icon} ${s.name}`).join("  ·  ")
+    : "Tích ít nhất 1 skill ở bước 1.";
+  els.generateBtn.querySelector(".btn-text").textContent = n > 1 ? `✨ Chạy ${n} skill` : "✨ Chạy skill";
 }
 
 loadSkills();
@@ -144,35 +151,6 @@ document.querySelectorAll(".chip").forEach((chip) => {
     els.productInfo.focus();
   });
 });
-
-// ---------- Loading cycle text ----------
-const LOADING_MSGS = [
-  "Đọc ngữ cảnh…",
-  "Áp framework RBL…",
-  "Phác chân dung khách…",
-  "Viết hook & nội dung…",
-  "Soạn theo cấu trúc chuẩn…",
-  "Tinh chỉnh câu chữ…",
-];
-let loadingTimer = null;
-function startLoadingCycle() {
-  const el = $("loadingCycle");
-  if (!el) return;
-  let i = 0;
-  el.textContent = LOADING_MSGS[0];
-  loadingTimer = setInterval(() => {
-    i = (i + 1) % LOADING_MSGS.length;
-    el.style.opacity = "0";
-    setTimeout(() => {
-      el.textContent = LOADING_MSGS[i];
-      el.style.opacity = "1";
-    }, 250);
-  }, 2200);
-}
-function stopLoadingCycle() {
-  if (loadingTimer) clearInterval(loadingTimer);
-  loadingTimer = null;
-}
 
 // ---------- Image upload ----------
 els.dropzone.addEventListener("click", (e) => {
@@ -215,12 +193,17 @@ function handleFile(file) {
   reader.readAsDataURL(file);
 }
 
-// ---------- Generate ----------
+// ---------- Generate (tuần tự nhiều skill) ----------
 els.generateBtn.addEventListener("click", generate);
 els.againBtn.addEventListener("click", generate);
 
 async function generate() {
   const productInfo = els.productInfo.value.trim();
+  const ids = SKILLS.filter((s) => selectedIds.has(s.id)).map((s) => s.id);
+  if (!ids.length) {
+    showError("Hãy tích ít nhất 1 skill ở bước 1.");
+    return;
+  }
   if (!productInfo && !imageDataUrl) {
     showError("Hãy nhập thông tin hoặc thả một ảnh.");
     return;
@@ -233,28 +216,34 @@ async function generate() {
     els.settingsCard.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
+
   hideError();
   setLoading(true);
-  els.output.hidden = true;
+  lastResults = [];
+  els.resultsContainer.innerHTML = "";
+  els.output.hidden = false;
+  els.output.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  try {
-    const resp = await fetch("/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ skillId: selectedSkillId, productInfo, imageDataUrl, apiKey, model }),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || `Lỗi ${resp.status}`);
-    lastResult = data;
-    if (data.type === "plan") renderPlan(data.plan);
-    else renderMarkdown(data);
-    els.output.hidden = false;
-    els.output.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (err) {
-    showError(err.message || "Có lỗi xảy ra.");
-  } finally {
-    setLoading(false);
+  for (let i = 0; i < ids.length; i++) {
+    const skill = SKILLS.find((s) => s.id === ids[i]);
+    setProgress(`(${i + 1}/${ids.length}) Đang chạy: ${skill.icon} ${skill.name}…`);
+    const card = appendPendingCard(skill);
+    try {
+      const resp = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skillId: skill.id, productInfo, imageDataUrl, apiKey, model }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || `Lỗi ${resp.status}`);
+      const md = data.type === "plan" ? planToMarkdown(data.plan) : data.markdown || "";
+      lastResults.push({ skill, markdown: md });
+      fillCard(card, skill, md);
+    } catch (err) {
+      fillCardError(card, skill, err.message || "Lỗi không xác định.");
+    }
   }
+  setLoading(false);
 }
 
 function setLoading(on) {
@@ -263,8 +252,9 @@ function setLoading(on) {
   els.generateBtn.querySelector(".btn-text").hidden = on;
   els.generateBtn.querySelector(".spinner").hidden = !on;
   els.loadingState.hidden = !on;
-  if (on) startLoadingCycle();
-  else stopLoadingCycle();
+}
+function setProgress(text) {
+  els.loadingCycle.textContent = text;
 }
 function showError(msg) {
   els.errorBox.textContent = "⚠ " + msg;
@@ -274,145 +264,57 @@ function hideError() {
   els.errorBox.hidden = true;
 }
 
-// ---------- Render helpers ----------
+// ---------- Result cards ----------
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const funnelClass = (f) => `badge-${String(f || "").toLowerCase().slice(0, 4)}`;
 
-// ----- Markdown skill output -----
-function renderMarkdown(data) {
-  els.planView.hidden = true;
-  els.mdView.hidden = false;
-  els.mdIcon.textContent = data.skill?.icon || "📄";
-  els.mdTitle.textContent = data.skill?.name || "Kết quả";
-  const html = window.marked ? window.marked.parse(data.markdown || "") : `<pre>${esc(data.markdown)}</pre>`;
-  els.markdownBody.innerHTML = html;
-}
-
-// ----- Structured plan output -----
-function renderPlan(p) {
-  els.mdView.hidden = true;
-  els.planView.hidden = false;
-  els.summaryCard.innerHTML = `
-    <h3>${esc(p.product_summary || "Kế hoạch content")}</h3>
-    ${p.positioning ? `<p class="positioning">“${esc(p.positioning)}”</p>` : ""}`;
-  els.panelScripts.innerHTML =
-    (p.content_scripts || []).map(renderScript).join("") || `<p class="hint">Không có kịch bản.</p>`;
-  els.panelAudience.innerHTML =
-    (p.target_audiences || []).map(renderAudience).join("") || `<p class="hint">Không có đối tượng.</p>`;
-  els.panelChannels.innerHTML = renderChannels(p.channels || []);
-  bindCopyButtons();
-  // reset tab về đầu
-  document.querySelectorAll(".tab").forEach((t, i) => t.classList.toggle("active", i === 0));
-  document.querySelectorAll(".tab-panel").forEach((pn, i) => pn.classList.toggle("active", i === 0));
-}
-
-function renderScript(s) {
-  const hooks = (s.hooks || [])
-    .map((h) => `<div class="hook-item"><span class="hook-type">${esc(h.type)}:</span>${esc(h.text)}</div>`)
-    .join("");
-  const body = (s.body || []).map((b) => `<li>${esc(b)}</li>`).join("");
-  const ib = s.image_brief || {};
-  return `
-  <article class="script-card">
-    <div class="script-head">
-      <h3>${esc(s.title || "Kịch bản")}</h3>
-      <span class="badge ${funnelClass(s.funnel)}">${esc(s.funnel || "")}</span>
+function appendPendingCard(skill) {
+  const card = document.createElement("div");
+  card.className = "card md-card pending";
+  card.innerHTML = `
+    <div class="md-head">
+      <span>${esc(skill.icon || "📄")}</span>
+      <h3>${esc(skill.name)}</h3>
+      <span class="card-status">⏳ đang chạy…</span>
     </div>
-    <div class="script-meta">${esc(s.channel || "")} · ${esc(s.format || "")}</div>
-    ${s.key_message ? `<div class="block"><div class="block-label">Key message</div><div class="key-message">${esc(s.key_message)}</div></div>` : ""}
-    <div class="block hooks">
-      <div class="block-label">Hook — 3 phương án</div>
-      ${hooks}
-      ${s.recommended_hook ? `<div class="recommended">👉 Gợi ý: ${esc(s.recommended_hook)}</div>` : ""}
+    <div class="markdown-body"><div class="card-skeleton"></div></div>`;
+  els.resultsContainer.appendChild(card);
+  return card;
+}
+
+function fillCard(card, skill, markdown) {
+  card.classList.remove("pending");
+  const html = window.marked ? window.marked.parse(markdown) : `<pre>${esc(markdown)}</pre>`;
+  card.innerHTML = `
+    <div class="md-head">
+      <span>${esc(skill.icon || "📄")}</span>
+      <h3>${esc(skill.name)}</h3>
+      <div class="card-actions">
+        <button class="mini" data-act="copy">📋 Copy</button>
+        <button class="mini" data-act="dl">⬇️</button>
+      </div>
     </div>
-    ${body ? `<div class="block"><div class="block-label">Body</div><ul class="body-list">${body}</ul></div>` : ""}
-    ${s.cta ? `<div class="block"><div class="block-label">CTA</div><span class="cta-box">${esc(s.cta)}</span></div>` : ""}
-    <div class="img-brief">
-      <div class="block-label">🖼️ Image brief đi kèm</div>
-      <dl class="brief-grid">
-        ${ib.concept ? `<dt>Concept</dt><dd>${esc(ib.concept)}</dd>` : ""}
-        ${ib.emotion ? `<dt>Cảm xúc</dt><dd>${esc(ib.emotion)}</dd>` : ""}
-        ${ib.composition ? `<dt>Bố cục</dt><dd>${esc(ib.composition)}</dd>` : ""}
-        ${ib.colors ? `<dt>Màu</dt><dd>${esc(ib.colors)}</dd>` : ""}
-        ${ib.text_overlay ? `<dt>Text overlay</dt><dd>${esc(ib.text_overlay)}</dd>` : ""}
-      </dl>
-      ${ib.image_prompt
-        ? `<div class="prompt-row"><div class="prompt-text">${esc(ib.image_prompt)}</div>
-             <button class="copy-prompt" data-copy="${esc(ib.image_prompt)}">Copy prompt</button></div>`
-        : ""}
-    </div>
-  </article>`;
-}
-
-function renderAudience(a) {
-  const tier = esc(a.tier || "");
-  return `
-  <article class="aud-card">
-    <div class="script-head"><h3>${esc(a.name || "Nhóm KH")}</h3><span class="badge tier-${tier}">${tier}</span></div>
-    <dl class="aud-grid">
-      ${a.demographic ? `<dt>Nhân khẩu</dt><dd>${esc(a.demographic)}</dd>` : ""}
-      ${a.pain ? `<dt>Nỗi đau</dt><dd>${esc(a.pain)}</dd>` : ""}
-      ${a.inner_voice ? `<dt>Câu nội tâm</dt><dd class="inner-voice">“${esc(a.inner_voice)}”</dd>` : ""}
-      ${a.where_to_reach ? `<dt>Tiếp cận ở</dt><dd>${esc(a.where_to_reach)}</dd>` : ""}
-    </dl>
-  </article>`;
-}
-
-function renderChannels(channels) {
-  if (!channels.length) return `<p class="hint">Không có kênh.</p>`;
-  const rows = channels
-    .map(
-      (c) => `<tr>
-        <td><strong>${esc(c.channel)}</strong></td>
-        <td>${esc(c.format || "")}</td>
-        <td><span class="badge ${funnelClass(c.funnel)}">${esc(c.funnel || "")}</span></td>
-        <td>${esc(c.frequency || "")}</td>
-        <td>${esc(c.reason || "")}</td>
-      </tr>`
-    )
-    .join("");
-  return `<table class="channel-table">
-    <thead><tr><th>Kênh</th><th>Format</th><th>Phễu</th><th>Tần suất</th><th>Lý do</th></tr></thead>
-    <tbody>${rows}</tbody></table>`;
-}
-
-function bindCopyButtons() {
-  document.querySelectorAll(".copy-prompt").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      navigator.clipboard.writeText(btn.dataset.copy);
-      const old = btn.textContent;
-      btn.textContent = "✓ Đã copy";
-      setTimeout(() => (btn.textContent = old), 1500);
-    });
+    <div class="markdown-body">${html}</div>`;
+  card.querySelector('[data-act="copy"]').addEventListener("click", (e) => {
+    navigator.clipboard.writeText(markdown);
+    flash(e.target, "✓ Đã copy");
   });
+  card.querySelector('[data-act="dl"]').addEventListener("click", () => downloadMd(markdown, skill.id + ".md"));
 }
 
-// ---------- Tabs ----------
-document.querySelectorAll(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
-    document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
-    tab.classList.add("active");
-    $("panel-" + tab.dataset.tab).classList.add("active");
-  });
-});
+function fillCardError(card, skill, msg) {
+  card.classList.remove("pending");
+  card.innerHTML = `
+    <div class="md-head">
+      <span>${esc(skill.icon || "📄")}</span>
+      <h3>${esc(skill.name)}</h3>
+      <span class="card-status err">✕ lỗi</span>
+    </div>
+    <div class="error-box" style="margin:0">⚠ ${esc(msg)}</div>`;
+}
 
 // ---------- Export ----------
-function currentMarkdown() {
-  if (!lastResult) return "";
-  return lastResult.type === "plan" ? planToMarkdown(lastResult.plan) : lastResult.markdown || "";
-}
-els.copyBtn.addEventListener("click", () => {
-  const md = currentMarkdown();
-  if (!md) return;
-  navigator.clipboard.writeText(md);
-  flash(els.copyBtn, "✓ Đã copy");
-});
-els.downloadBtn.addEventListener("click", () => {
-  const md = currentMarkdown();
-  if (!md) return;
-  const name = (lastResult?.skill?.id || "ket-qua") + ".md";
+function downloadMd(md, name) {
   const blob = new Blob([md], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -420,6 +322,18 @@ els.downloadBtn.addEventListener("click", () => {
   a.download = name;
   a.click();
   URL.revokeObjectURL(url);
+}
+function allMarkdown() {
+  return lastResults.map((r) => `# ${r.skill.icon} ${r.skill.name}\n\n${r.markdown}`).join("\n\n---\n\n");
+}
+els.copyAllBtn.addEventListener("click", () => {
+  if (!lastResults.length) return;
+  navigator.clipboard.writeText(allMarkdown());
+  flash(els.copyAllBtn, "✓ Đã copy tất cả");
+});
+els.downloadAllBtn.addEventListener("click", () => {
+  if (!lastResults.length) return;
+  downloadMd(allMarkdown(), "umi-content.md");
 });
 
 function flash(btn, text) {
@@ -428,8 +342,9 @@ function flash(btn, text) {
   setTimeout(() => (btn.textContent = old), 1400);
 }
 
+// ---------- Plan -> Markdown ----------
 function planToMarkdown(p) {
-  let md = `# Kế hoạch Content\n\n${p.product_summary || ""}\n\n`;
+  let md = `${p.product_summary || ""}\n\n`;
   if (p.positioning) md += `> ${p.positioning}\n\n`;
   md += `## 🎯 Đối tượng mục tiêu\n\n`;
   (p.target_audiences || []).forEach((a) => {
@@ -455,9 +370,10 @@ function planToMarkdown(p) {
     (s.body || []).forEach((b) => (md += `- ${b}\n`));
     if (s.cta) md += `\n**CTA:** ${s.cta}\n`;
     const ib = s.image_brief || {};
-    md += `\n**Image brief:**\n`;
-    if (ib.concept) md += `- Concept: ${ib.concept}\n`;
-    if (ib.image_prompt) md += `- Prompt (EN): \`${ib.image_prompt}\`\n`;
+    if (ib.concept || ib.image_prompt) {
+      md += `\n**Image brief:** ${ib.concept || ""}\n`;
+      if (ib.image_prompt) md += `- Prompt (EN): \`${ib.image_prompt}\`\n`;
+    }
     md += `\n---\n\n`;
   });
   return md;

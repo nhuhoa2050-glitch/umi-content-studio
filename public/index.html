@@ -61,10 +61,10 @@
       <div class="step-head"><span class="step-num">2</span><h2>Nhập thông tin</h2></div>
 
       <div class="selected-skill" id="selectedSkill" hidden>
-        <span class="ss-icon" id="ssIcon">⚡</span>
+        <span class="ss-icon" id="ssIcon">🎯</span>
         <div>
-          <strong id="ssName">—</strong>
-          <small id="ssHint"></small>
+          <strong id="ssName">Đã chọn 0 skill</strong>
+          <small id="ssHint">Tích thêm skill ở bước 1 — chạy nhiều cái cùng lúc cũng được.</small>
         </div>
       </div>
 
@@ -101,30 +101,10 @@
 
     <!-- OUTPUT -->
     <section class="output" id="output" hidden>
-      <!-- structured plan -->
-      <div id="planView" hidden>
-        <div class="summary-card card" id="summaryCard"></div>
-        <div class="tabs" id="tabs">
-          <button class="tab active" data-tab="scripts">📝 Kịch bản content</button>
-          <button class="tab" data-tab="audience">🎯 Đối tượng</button>
-          <button class="tab" data-tab="channels">📡 Kênh triển khai</button>
-        </div>
-        <div class="tab-panel active" id="panel-scripts"></div>
-        <div class="tab-panel" id="panel-audience"></div>
-        <div class="tab-panel" id="panel-channels"></div>
-      </div>
-
-      <!-- markdown skill output -->
-      <div id="mdView" hidden>
-        <div class="card md-card">
-          <div class="md-head"><span id="mdIcon">📄</span><h3 id="mdTitle">Kết quả</h3></div>
-          <div class="markdown-body" id="markdownBody"></div>
-        </div>
-      </div>
-
+      <div id="resultsContainer"></div>
       <div class="output-actions">
-        <button class="btn-ghost" id="copyBtn">📋 Copy</button>
-        <button class="btn-ghost" id="downloadBtn">⬇️ Tải file</button>
+        <button class="btn-ghost" id="copyAllBtn">📋 Copy tất cả</button>
+        <button class="btn-ghost" id="downloadAllBtn">⬇️ Tải tất cả (.md)</button>
         <button class="btn-ghost" id="againBtn">🔄 Chạy lại</button>
       </div>
     </section>
