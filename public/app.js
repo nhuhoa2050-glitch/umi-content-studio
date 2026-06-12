@@ -13,12 +13,27 @@ const els = {
   errorBox: $("errorBox"),
   output: $("output"),
   loadingState: $("loadingState"),
+  // skill picker
+  skillGroups: $("skillGroups"),
+  selectedSkill: $("selectedSkill"),
+  ssIcon: $("ssIcon"),
+  ssName: $("ssName"),
+  ssHint: $("ssHint"),
+  // plan view
+  planView: $("planView"),
   summaryCard: $("summaryCard"),
   panelScripts: $("panel-scripts"),
   panelAudience: $("panel-audience"),
   panelChannels: $("panel-channels"),
-  copyJsonBtn: $("copyJsonBtn"),
+  // markdown view
+  mdView: $("mdView"),
+  markdownBody: $("markdownBody"),
+  mdIcon: $("mdIcon"),
+  mdTitle: $("mdTitle"),
+  // actions
+  copyBtn: $("copyBtn"),
   downloadBtn: $("downloadBtn"),
+  againBtn: $("againBtn"),
   // settings
   settingsCard: document.querySelector(".settings-card"),
   settingsToggle: $("settingsToggle"),
@@ -29,17 +44,17 @@ const els = {
 };
 
 let imageDataUrl = null;
-let lastPlan = null;
+let lastResult = null; // {type, plan|markdown, skill}
+let SKILLS = [];
+let selectedSkillId = "chot-don";
 
-// ---------- API key (lưu localStorage) ----------
+// ---------- API key ----------
 const KEY_STORE = "umi_apiKey";
 const MODEL_STORE = "umi_model";
-
 function loadKey() {
   els.apiKey.value = localStorage.getItem(KEY_STORE) || "";
   els.modelInput.value = localStorage.getItem(MODEL_STORE) || "";
   updateKeyStatus();
-  // mở sẵn panel nếu chưa có key
   if (!els.apiKey.value) els.settingsCard.classList.add("open");
 }
 function updateKeyStatus() {
@@ -53,28 +68,91 @@ els.saveKeyBtn.addEventListener("click", () => {
   localStorage.setItem(MODEL_STORE, els.modelInput.value.trim());
   updateKeyStatus();
   els.settingsCard.classList.remove("open");
-  flash(els.saveKeyBtn, "✓ Đã lưu");
+  flash(els.saveKeyBtn, "✓");
 });
 els.apiKey.addEventListener("input", updateKeyStatus);
 loadKey();
+
+// ---------- Skill picker ----------
+const STAGE_ORDER = ["Chốt đơn ⭐", "Nền tảng", "Lập kế hoạch", "Sản xuất", "Brief visual", "Đo lường"];
+
+async function loadSkills() {
+  try {
+    const resp = await fetch("/api/skills");
+    const data = await resp.json();
+    SKILLS = data.skills || [];
+    renderSkillPicker();
+    const def = SKILLS.find((s) => s.id === selectedSkillId) || SKILLS[0];
+    if (def) selectSkill(def.id);
+  } catch {
+    els.skillGroups.innerHTML = `<p class="hint" style="text-align:left">Không tải được danh sách skill. Tải lại trang.</p>`;
+  }
+}
+
+function renderSkillPicker() {
+  const groups = {};
+  SKILLS.forEach((s) => {
+    (groups[s.stage] = groups[s.stage] || []).push(s);
+  });
+  const stages = Object.keys(groups).sort(
+    (a, b) => (STAGE_ORDER.indexOf(a) + 1 || 99) - (STAGE_ORDER.indexOf(b) + 1 || 99)
+  );
+  els.skillGroups.innerHTML = stages
+    .map(
+      (stage) => `
+    <div class="skill-group">
+      <div class="skill-group-title">${esc(stage)}</div>
+      <div class="skill-chips">
+        ${groups[stage]
+          .map(
+            (s) => `<button class="skill-chip" type="button" data-id="${esc(s.id)}">
+              <span class="sc-icon">${esc(s.icon || "📄")}</span><span>${esc(s.name)}</span>
+            </button>`
+          )
+          .join("")}
+      </div>
+    </div>`
+    )
+    .join("");
+
+  els.skillGroups.querySelectorAll(".skill-chip").forEach((btn) => {
+    btn.addEventListener("click", () => selectSkill(btn.dataset.id));
+  });
+}
+
+function selectSkill(id) {
+  const skill = SKILLS.find((s) => s.id === id);
+  if (!skill) return;
+  selectedSkillId = id;
+  els.skillGroups.querySelectorAll(".skill-chip").forEach((b) => {
+    b.classList.toggle("selected", b.dataset.id === id);
+  });
+  els.ssIcon.textContent = skill.icon || "📄";
+  els.ssName.textContent = skill.name;
+  els.ssHint.textContent = skill.hint || "";
+  els.selectedSkill.hidden = false;
+  els.productInfo.placeholder = skill.hint ? `Gợi ý nhập: ${skill.hint}` : "Mô tả sản phẩm / ngữ cảnh…";
+  els.generateBtn.querySelector(".btn-text").textContent = `✨ Chạy: ${skill.name}`;
+}
+
+loadSkills();
 
 // ---------- Example chips ----------
 document.querySelectorAll(".chip").forEach((chip) => {
   chip.addEventListener("click", () => {
     els.productInfo.value = chip.dataset.ex;
     els.productInfo.focus();
-    els.productInfo.dispatchEvent(new Event("input"));
   });
 });
 
 // ---------- Loading cycle text ----------
 const LOADING_MSGS = [
-  "Đọc thông tin sản phẩm…",
-  "Phác hoạ chân dung khách hàng…",
-  "Chọn kênh & tầng phễu phù hợp…",
-  "Viết hook 3 giây đầu…",
-  "Soạn image-brief đi kèm…",
-  "Tinh chỉnh theo framework RBL…",
+  "Đọc ngữ cảnh…",
+  "Áp framework RBL…",
+  "Phác chân dung khách…",
+  "Viết hook & nội dung…",
+  "Soạn theo cấu trúc chuẩn…",
+  "Tinh chỉnh câu chữ…",
 ];
 let loadingTimer = null;
 function startLoadingCycle() {
@@ -125,7 +203,6 @@ els.removeImg.addEventListener("click", (e) => {
   els.previewWrap.hidden = true;
   els.dropzoneInner.hidden = false;
 });
-
 function handleFile(file) {
   if (!file || !file.type.startsWith("image/")) return;
   const reader = new FileReader();
@@ -140,17 +217,18 @@ function handleFile(file) {
 
 // ---------- Generate ----------
 els.generateBtn.addEventListener("click", generate);
+els.againBtn.addEventListener("click", generate);
 
 async function generate() {
   const productInfo = els.productInfo.value.trim();
   if (!productInfo && !imageDataUrl) {
-    showError("Hãy nhập thông tin sản phẩm hoặc tải lên một ảnh.");
+    showError("Hãy nhập thông tin hoặc thả một ảnh.");
     return;
   }
   const apiKey = els.apiKey.value.trim();
   const model = els.modelInput.value.trim();
   if (!apiKey) {
-    showError("Chưa có API key. Mở '⚙️ Cấu hình API' phía trên, dán key Groq miễn phí rồi Lưu.");
+    showError("Chưa có API key. Mở '⚙️ Cấu hình API', dán key Groq miễn phí rồi Lưu.");
     els.settingsCard.classList.add("open");
     els.settingsCard.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
@@ -163,12 +241,13 @@ async function generate() {
     const resp = await fetch("/api/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productInfo, imageDataUrl, apiKey, model }),
+      body: JSON.stringify({ skillId: selectedSkillId, productInfo, imageDataUrl, apiKey, model }),
     });
     const data = await resp.json();
     if (!resp.ok) throw new Error(data.error || `Lỗi ${resp.status}`);
-    lastPlan = data;
-    render(data);
+    lastResult = data;
+    if (data.type === "plan") renderPlan(data.plan);
+    else renderMarkdown(data);
     els.output.hidden = false;
     els.output.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
@@ -180,6 +259,7 @@ async function generate() {
 
 function setLoading(on) {
   els.generateBtn.disabled = on;
+  els.againBtn.disabled = on;
   els.generateBtn.querySelector(".btn-text").hidden = on;
   els.generateBtn.querySelector(".spinner").hidden = !on;
   els.loadingState.hidden = !on;
@@ -194,30 +274,37 @@ function hideError() {
   els.errorBox.hidden = true;
 }
 
-// ---------- Render ----------
+// ---------- Render helpers ----------
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const funnelClass = (f) => `badge-${String(f || "").toLowerCase().slice(0, 4)}`;
 
-function render(p) {
-  // Summary
+// ----- Markdown skill output -----
+function renderMarkdown(data) {
+  els.planView.hidden = true;
+  els.mdView.hidden = false;
+  els.mdIcon.textContent = data.skill?.icon || "📄";
+  els.mdTitle.textContent = data.skill?.name || "Kết quả";
+  const html = window.marked ? window.marked.parse(data.markdown || "") : `<pre>${esc(data.markdown)}</pre>`;
+  els.markdownBody.innerHTML = html;
+}
+
+// ----- Structured plan output -----
+function renderPlan(p) {
+  els.mdView.hidden = true;
+  els.planView.hidden = false;
   els.summaryCard.innerHTML = `
     <h3>${esc(p.product_summary || "Kế hoạch content")}</h3>
-    ${p.positioning ? `<p class="positioning">“${esc(p.positioning)}”</p>` : ""}
-  `;
-
-  // Scripts
-  els.panelScripts.innerHTML = (p.content_scripts || []).map(renderScript).join("") ||
-    `<p class="hint">Không có kịch bản.</p>`;
-
-  // Audience
-  els.panelAudience.innerHTML = (p.target_audiences || []).map(renderAudience).join("") ||
-    `<p class="hint">Không có đối tượng.</p>`;
-
-  // Channels
+    ${p.positioning ? `<p class="positioning">“${esc(p.positioning)}”</p>` : ""}`;
+  els.panelScripts.innerHTML =
+    (p.content_scripts || []).map(renderScript).join("") || `<p class="hint">Không có kịch bản.</p>`;
+  els.panelAudience.innerHTML =
+    (p.target_audiences || []).map(renderAudience).join("") || `<p class="hint">Không có đối tượng.</p>`;
   els.panelChannels.innerHTML = renderChannels(p.channels || []);
-
   bindCopyButtons();
+  // reset tab về đầu
+  document.querySelectorAll(".tab").forEach((t, i) => t.classList.toggle("active", i === 0));
+  document.querySelectorAll(".tab-panel").forEach((pn, i) => pn.classList.toggle("active", i === 0));
 }
 
 function renderScript(s) {
@@ -233,19 +320,14 @@ function renderScript(s) {
       <span class="badge ${funnelClass(s.funnel)}">${esc(s.funnel || "")}</span>
     </div>
     <div class="script-meta">${esc(s.channel || "")} · ${esc(s.format || "")}</div>
-
     ${s.key_message ? `<div class="block"><div class="block-label">Key message</div><div class="key-message">${esc(s.key_message)}</div></div>` : ""}
-
     <div class="block hooks">
       <div class="block-label">Hook — 3 phương án</div>
       ${hooks}
       ${s.recommended_hook ? `<div class="recommended">👉 Gợi ý: ${esc(s.recommended_hook)}</div>` : ""}
     </div>
-
     ${body ? `<div class="block"><div class="block-label">Body</div><ul class="body-list">${body}</ul></div>` : ""}
-
     ${s.cta ? `<div class="block"><div class="block-label">CTA</div><span class="cta-box">${esc(s.cta)}</span></div>` : ""}
-
     <div class="img-brief">
       <div class="block-label">🖼️ Image brief đi kèm</div>
       <dl class="brief-grid">
@@ -255,14 +337,10 @@ function renderScript(s) {
         ${ib.colors ? `<dt>Màu</dt><dd>${esc(ib.colors)}</dd>` : ""}
         ${ib.text_overlay ? `<dt>Text overlay</dt><dd>${esc(ib.text_overlay)}</dd>` : ""}
       </dl>
-      ${
-        ib.image_prompt
-          ? `<div class="prompt-row">
-               <div class="prompt-text">${esc(ib.image_prompt)}</div>
-               <button class="copy-prompt" data-copy="${esc(ib.image_prompt)}">Copy prompt</button>
-             </div>`
-          : ""
-      }
+      ${ib.image_prompt
+        ? `<div class="prompt-row"><div class="prompt-text">${esc(ib.image_prompt)}</div>
+             <button class="copy-prompt" data-copy="${esc(ib.image_prompt)}">Copy prompt</button></div>`
+        : ""}
     </div>
   </article>`;
 }
@@ -271,10 +349,7 @@ function renderAudience(a) {
   const tier = esc(a.tier || "");
   return `
   <article class="aud-card">
-    <div class="script-head">
-      <h3>${esc(a.name || "Nhóm KH")}</h3>
-      <span class="badge tier-${tier}">${tier}</span>
-    </div>
+    <div class="script-head"><h3>${esc(a.name || "Nhóm KH")}</h3><span class="badge tier-${tier}">${tier}</span></div>
     <dl class="aud-grid">
       ${a.demographic ? `<dt>Nhân khẩu</dt><dd>${esc(a.demographic)}</dd>` : ""}
       ${a.pain ? `<dt>Nỗi đau</dt><dd>${esc(a.pain)}</dd>` : ""}
@@ -299,8 +374,7 @@ function renderChannels(channels) {
     .join("");
   return `<table class="channel-table">
     <thead><tr><th>Kênh</th><th>Format</th><th>Phễu</th><th>Tần suất</th><th>Lý do</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+    <tbody>${rows}</tbody></table>`;
 }
 
 function bindCopyButtons() {
@@ -325,20 +399,25 @@ document.querySelectorAll(".tab").forEach((tab) => {
 });
 
 // ---------- Export ----------
-els.copyJsonBtn.addEventListener("click", () => {
-  if (!lastPlan) return;
-  navigator.clipboard.writeText(JSON.stringify(lastPlan, null, 2));
-  flash(els.copyJsonBtn, "✓ Đã copy JSON");
+function currentMarkdown() {
+  if (!lastResult) return "";
+  return lastResult.type === "plan" ? planToMarkdown(lastResult.plan) : lastResult.markdown || "";
+}
+els.copyBtn.addEventListener("click", () => {
+  const md = currentMarkdown();
+  if (!md) return;
+  navigator.clipboard.writeText(md);
+  flash(els.copyBtn, "✓ Đã copy");
 });
-
 els.downloadBtn.addEventListener("click", () => {
-  if (!lastPlan) return;
-  const md = toMarkdown(lastPlan);
+  const md = currentMarkdown();
+  if (!md) return;
+  const name = (lastResult?.skill?.id || "ket-qua") + ".md";
   const blob = new Blob([md], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "ke-hoach-content.md";
+  a.download = name;
   a.click();
   URL.revokeObjectURL(url);
 });
@@ -346,13 +425,12 @@ els.downloadBtn.addEventListener("click", () => {
 function flash(btn, text) {
   const old = btn.textContent;
   btn.textContent = text;
-  setTimeout(() => (btn.textContent = old), 1500);
+  setTimeout(() => (btn.textContent = old), 1400);
 }
 
-function toMarkdown(p) {
+function planToMarkdown(p) {
   let md = `# Kế hoạch Content\n\n${p.product_summary || ""}\n\n`;
   if (p.positioning) md += `> ${p.positioning}\n\n`;
-
   md += `## 🎯 Đối tượng mục tiêu\n\n`;
   (p.target_audiences || []).forEach((a) => {
     md += `### ${a.name} (${a.tier})\n`;
@@ -362,14 +440,11 @@ function toMarkdown(p) {
     if (a.where_to_reach) md += `- **Tiếp cận:** ${a.where_to_reach}\n`;
     md += `\n`;
   });
-
   md += `## 📡 Kênh triển khai\n\n| Kênh | Format | Phễu | Tần suất | Lý do |\n|---|---|---|---|---|\n`;
   (p.channels || []).forEach((c) => {
     md += `| ${c.channel} | ${c.format || ""} | ${c.funnel || ""} | ${c.frequency || ""} | ${c.reason || ""} |\n`;
   });
-  md += `\n`;
-
-  md += `## 📝 Kịch bản content\n\n`;
+  md += `\n## 📝 Kịch bản content\n\n`;
   (p.content_scripts || []).forEach((s, i) => {
     md += `### ${i + 1}. ${s.title} [${s.funnel}] — ${s.channel} · ${s.format}\n\n`;
     if (s.key_message) md += `**Key message:** ${s.key_message}\n\n`;
@@ -382,10 +457,6 @@ function toMarkdown(p) {
     const ib = s.image_brief || {};
     md += `\n**Image brief:**\n`;
     if (ib.concept) md += `- Concept: ${ib.concept}\n`;
-    if (ib.emotion) md += `- Cảm xúc: ${ib.emotion}\n`;
-    if (ib.composition) md += `- Bố cục: ${ib.composition}\n`;
-    if (ib.colors) md += `- Màu: ${ib.colors}\n`;
-    if (ib.text_overlay) md += `- Text overlay: ${ib.text_overlay}\n`;
     if (ib.image_prompt) md += `- Prompt (EN): \`${ib.image_prompt}\`\n`;
     md += `\n---\n\n`;
   });

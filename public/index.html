@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Umi Content Studio — Viết content tự động bằng AI</title>
-  <meta name="description" content="Nhập ảnh hoặc thông tin sản phẩm, AI tự đề xuất kịch bản content, đối tượng, kênh triển khai và image-brief đi kèm." />
+  <title>Umi Content Studio — Bộ skill content & chốt đơn bằng AI</title>
+  <meta name="description" content="18+ skill content RBL: từ brand voice, kịch bản, ads, email đến chốt đơn. Nhập ý tưởng, AI ra output chuẩn." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,9 +16,9 @@
 
   <header class="hero">
     <div class="hero-inner">
-      <div class="hero-badge">✨ AI Content · framework RBL</div>
-      <h1>Biến <span class="grad-text">một ý tưởng</span> thành cả chiến dịch content</h1>
-      <p class="hero-sub">Nhập ảnh nhu cầu hoặc thông tin sản phẩm — AI tự đề xuất <strong>kịch bản</strong>, <strong>đối tượng</strong>, <strong>kênh triển khai</strong> và <strong>ảnh đi kèm</strong>.</p>
+      <div class="hero-badge">✨ 20 skill content RBL · từ ý tưởng đến chốt đơn</div>
+      <h1>Bộ vũ khí <span class="grad-text">content & chốt đơn</span> bằng AI</h1>
+      <p class="hero-sub">Chọn skill bạn cần — AI chạy đúng framework, ra <strong>output chuẩn dùng được ngay</strong>: brand voice, kịch bản, ads, email, seeding, brief visual, báo cáo… và <strong>kịch bản chốt đơn</strong>.</p>
     </div>
   </header>
 
@@ -48,13 +48,28 @@
       </div>
     </section>
 
-    <!-- INPUT -->
-    <section class="card input-card">
-      <div class="step-head"><span class="step-num">1</span><h2>Nhập thông tin</h2></div>
+    <!-- STEP 1: SKILL PICKER -->
+    <section class="card">
+      <div class="step-head"><span class="step-num">1</span><h2>Chọn skill</h2></div>
+      <div id="skillGroups" class="skill-groups">
+        <p class="hint" style="text-align:left">Đang tải danh sách skill…</p>
+      </div>
+    </section>
 
-      <label class="field-label" for="productInfo">Thông tin sản phẩm / nhu cầu</label>
+    <!-- STEP 2: INPUT -->
+    <section class="card input-card">
+      <div class="step-head"><span class="step-num">2</span><h2>Nhập thông tin</h2></div>
+
+      <div class="selected-skill" id="selectedSkill" hidden>
+        <span class="ss-icon" id="ssIcon">⚡</span>
+        <div>
+          <strong id="ssName">—</strong>
+          <small id="ssHint"></small>
+        </div>
+      </div>
+
       <textarea id="productInfo" rows="5"
-        placeholder="VD: Khóa học tiếng Anh giao tiếp cho người đi làm bận rộn, học 15 phút/ngày qua app, giá 1.990.000đ. Đối thủ chính là các trung tâm offline đắt đỏ…"></textarea>
+        placeholder="Mô tả sản phẩm / ngữ cảnh ở đây…"></textarea>
 
       <div class="example-chips">
         <span class="chip-label">Thử nhanh:</span>
@@ -77,44 +92,55 @@
       </div>
 
       <button class="btn-primary" id="generateBtn">
-        <span class="btn-text">✨ Tạo kế hoạch content</span>
+        <span class="btn-text">✨ Chạy skill</span>
         <span class="spinner" hidden></span>
       </button>
-      <p class="hint">Có thể nhập text, ảnh, hoặc cả hai. Càng cụ thể, output càng sắc.</p>
+      <p class="hint">Càng cụ thể (sản phẩm, giá, đối tượng, tình huống) → output càng sắc.</p>
       <div class="error-box" id="errorBox" hidden></div>
     </section>
 
     <!-- OUTPUT -->
     <section class="output" id="output" hidden>
-      <div class="summary-card card" id="summaryCard"></div>
-
-      <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="scripts">📝 Kịch bản content</button>
-        <button class="tab" data-tab="audience">🎯 Đối tượng</button>
-        <button class="tab" data-tab="channels">📡 Kênh triển khai</button>
+      <!-- structured plan -->
+      <div id="planView" hidden>
+        <div class="summary-card card" id="summaryCard"></div>
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="scripts">📝 Kịch bản content</button>
+          <button class="tab" data-tab="audience">🎯 Đối tượng</button>
+          <button class="tab" data-tab="channels">📡 Kênh triển khai</button>
+        </div>
+        <div class="tab-panel active" id="panel-scripts"></div>
+        <div class="tab-panel" id="panel-audience"></div>
+        <div class="tab-panel" id="panel-channels"></div>
       </div>
 
-      <div class="tab-panel active" id="panel-scripts"></div>
-      <div class="tab-panel" id="panel-audience"></div>
-      <div class="tab-panel" id="panel-channels"></div>
+      <!-- markdown skill output -->
+      <div id="mdView" hidden>
+        <div class="card md-card">
+          <div class="md-head"><span id="mdIcon">📄</span><h3 id="mdTitle">Kết quả</h3></div>
+          <div class="markdown-body" id="markdownBody"></div>
+        </div>
+      </div>
 
       <div class="output-actions">
-        <button class="btn-ghost" id="copyJsonBtn">📋 Copy JSON</button>
-        <button class="btn-ghost" id="downloadBtn">⬇️ Tải Markdown</button>
+        <button class="btn-ghost" id="copyBtn">📋 Copy</button>
+        <button class="btn-ghost" id="downloadBtn">⬇️ Tải file</button>
+        <button class="btn-ghost" id="againBtn">🔄 Chạy lại</button>
       </div>
     </section>
 
     <div class="loading-state" id="loadingState" hidden>
       <div class="loader-wave"><span></span><span></span><span></span><span></span><span></span></div>
-      <p class="loading-title">Đang phân tích & viết kịch bản…</p>
-      <p class="loading-cycle" id="loadingCycle">Đọc thông tin sản phẩm</p>
+      <p class="loading-title">AI đang chạy skill…</p>
+      <p class="loading-cycle" id="loadingCycle">Đọc ngữ cảnh</p>
     </div>
   </main>
 
   <footer class="footer">
-    <p>🌊 Umi Content Studio · framework RBL · chạy trên Groq / OpenAI</p>
+    <p>🌊 Umi Content Studio · 20 skill framework RBL · chạy trên Groq / OpenAI</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

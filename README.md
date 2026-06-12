@@ -1,6 +1,10 @@
 # 🌊 Umi Content Studio
 
-Web viết content tự động: **nhập ảnh nhu cầu hoặc thông tin sản phẩm → tự động đề xuất kịch bản content, đối tượng mục tiêu, kênh triển khai và image-brief đi kèm** (theo framework RBL, tiếng Việt).
+Bộ **20 skill content & chốt đơn** bằng AI theo framework RBL (tiếng Việt). Chọn skill → nhập ý tưởng/ảnh → AI chạy đúng framework → ra output chuẩn dùng được ngay.
+
+**Nhóm skill:** Chốt đơn ⭐ (kịch bản chốt đơn, kế hoạch nhanh) · Nền tảng (brand voice, customer insight, competitor, content strategy) · Lập kế hoạch (calendar, brief) · Sản xuất (caption, script video, email/zalo, seeding, ads copy, UGC) · Brief visual (image, carousel, video) · Đo lường (audit, report, next plan).
+
+Skill "Kế hoạch nhanh" trả về dạng có tab (kịch bản + đối tượng + kênh + image-brief); các skill còn lại trả về tài liệu Markdown đẹp, copy/tải được.
 
 ## Tính năng
 

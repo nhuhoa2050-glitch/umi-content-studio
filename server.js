@@ -4,7 +4,8 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateContentPlan, resolveProvider } from "./lib/generate.js";
+import { generateSkill, resolveProvider } from "./lib/generate.js";
+import { getSkill, skillsMeta } from "./lib/skills.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -49,7 +50,15 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer((req, res) => {
-  if (req.url.startsWith("/api/generate")) {
+  const path0 = req.url.split("?")[0];
+
+  if (path0 === "/api/skills") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ skills: skillsMeta() }));
+    return;
+  }
+
+  if (path0 === "/api/generate") {
     if (req.method !== "POST") {
       res.writeHead(405, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Chỉ chấp nhận POST." }));
@@ -59,15 +68,26 @@ const server = http.createServer((req, res) => {
     req.on("data", (c) => (body += c));
     req.on("end", async () => {
       try {
-        const { productInfo, imageDataUrl, apiKey, model, baseUrl } = JSON.parse(body || "{}");
+        const { productInfo, imageDataUrl, apiKey, model, baseUrl, skillId } = JSON.parse(body || "{}");
+        const id = skillId || "quick-plan";
+        const skill = getSkill(id);
+        if (!skill) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: `Skill không tồn tại: ${id}` }));
+          return;
+        }
         const cfg = resolveProvider({
           apiKey: apiKey || process.env.OPENAI_API_KEY,
           model: model || process.env.OPENAI_MODEL,
           baseUrl: baseUrl || process.env.OPENAI_BASE_URL,
         });
-        const plan = await generateContentPlan({ productInfo, imageDataUrl }, cfg);
+        const result = await generateSkill(id, { productInfo, imageDataUrl }, cfg);
+        const meta = { id: skill.id, name: skill.name, icon: skill.icon };
+        const payload = skill.structured
+          ? { type: "plan", plan: result, skill: meta }
+          : { type: "markdown", markdown: result, skill: meta };
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(plan));
+        res.end(JSON.stringify(payload));
       } catch (err) {
         res.writeHead(500, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: err.message || "Lỗi không xác định." }));

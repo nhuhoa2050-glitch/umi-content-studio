@@ -339,6 +339,87 @@ table.channel-table {
 }
 .btn-ghost:hover { border-color: var(--primary); color: var(--primary-d); transform: translateY(-1px); }
 
+/* SKILL PICKER */
+.skill-groups { display: flex; flex-direction: column; gap: 16px; }
+.skill-group-title {
+  font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .05em; margin-bottom: 9px;
+}
+.skill-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-chip {
+  display: inline-flex; align-items: center; gap: 7px; font-family: inherit;
+  font-size: 13.5px; font-weight: 600; color: var(--ink);
+  background: rgba(255,255,255,.7); border: 1.5px solid var(--border);
+  padding: 8px 14px; border-radius: 12px; cursor: pointer; transition: all .15s;
+}
+.skill-chip:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow); }
+.skill-chip .sc-icon { font-size: 16px; }
+.skill-chip.selected {
+  background: linear-gradient(135deg, #7F77DD, #D4537E); color: #fff; border-color: transparent;
+  box-shadow: 0 8px 20px rgba(127,119,221,.32);
+}
+/* nhóm chốt đơn nổi bật */
+.skill-group:first-child .skill-chip {
+  border-color: rgba(212,83,126,.4); background: rgba(212,83,126,.06);
+}
+.skill-group:first-child .skill-chip.selected { background: linear-gradient(135deg, #D4537E, #7F77DD); }
+
+/* SELECTED SKILL BANNER */
+.selected-skill {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  padding: 12px 14px; border-radius: 14px; background: rgba(127,119,221,.07);
+  border: 1px solid var(--border);
+}
+.ss-icon { font-size: 26px; line-height: 1; }
+.selected-skill strong { display: block; font-size: 15px; }
+.selected-skill small { font-size: 12px; color: var(--muted); }
+
+/* MARKDOWN OUTPUT */
+.md-card { animation: fade .4s; }
+.md-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 2px solid var(--border); }
+.md-head span { font-size: 24px; }
+.md-head h3 { font-size: 19px; font-weight: 900; }
+.markdown-body { font-size: 14.5px; color: var(--ink); line-height: 1.65; }
+.markdown-body h1, .markdown-body h2, .markdown-body h3 { font-weight: 800; line-height: 1.3; margin: 22px 0 10px; }
+.markdown-body h1 { font-size: 22px; }
+.markdown-body h2 {
+  font-size: 18px; color: var(--primary-d); padding-left: 12px; border-left: 4px solid var(--primary);
+}
+.markdown-body h3 { font-size: 16px; }
+.markdown-body h2:first-child, .markdown-body h3:first-child, .markdown-body p:first-child { margin-top: 0; }
+.markdown-body p { margin: 10px 0; }
+.markdown-body ul, .markdown-body ol { margin: 10px 0; padding-left: 22px; }
+.markdown-body li { margin: 5px 0; }
+.markdown-body strong { color: var(--ink); font-weight: 700; }
+.markdown-body a { color: var(--primary-d); }
+.markdown-body code {
+  background: rgba(127,119,221,.12); padding: 2px 7px; border-radius: 6px;
+  font-size: 12.5px; font-family: ui-monospace, 'SF Mono', monospace;
+}
+.markdown-body pre {
+  background: #1f1b2e; color: #eee; padding: 14px 16px; border-radius: 12px; overflow-x: auto; margin: 12px 0;
+}
+.markdown-body pre code { background: none; padding: 0; color: inherit; }
+.markdown-body blockquote {
+  margin: 12px 0; padding: 10px 16px; border-left: 3px solid var(--secondary);
+  background: rgba(212,83,126,.05); border-radius: 0 10px 10px 0; font-style: italic; color: var(--muted);
+}
+.markdown-body table {
+  width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px;
+  border-radius: 12px; overflow: hidden; box-shadow: var(--shadow);
+}
+.markdown-body th {
+  background: linear-gradient(135deg, #16131f, #2a2440); color: #fff; text-align: left;
+  padding: 11px 13px; font-weight: 700; font-size: 12.5px;
+}
+.markdown-body td { padding: 10px 13px; border-bottom: 1px solid var(--border); vertical-align: top; background: rgba(255,255,255,.5); }
+.markdown-body tr:last-child td { border-bottom: none; }
+.markdown-body hr { border: none; border-top: 1px dashed var(--border); margin: 20px 0; }
+
+@media (max-width: 600px) {
+  .markdown-body table { display: block; overflow-x: auto; }
+}
+
 .footer { text-align: center; padding: 28px; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 600px) {
