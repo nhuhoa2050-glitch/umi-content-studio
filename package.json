@@ -1,0 +1,14 @@
+{
+  "name": "umi-content-studio",
+  "version": "1.0.0",
+  "description": "Web viết content tự động — nhập ảnh nhu cầu hoặc thông tin sản phẩm, đề xuất kịch bản content, đối tượng, kênh triển khai và image-brief đi kèm. Theo framework RBL.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

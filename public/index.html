@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umi Content Studio — Viết content tự động</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🌊</span>
+      <div>
+        <h1>Umi Content Studio</h1>
+        <p>Nhập ảnh nhu cầu hoặc thông tin sản phẩm → tự động ra kịch bản, đối tượng, kênh & ảnh đi kèm</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- SETTINGS / API KEY -->
+    <section class="card settings-card">
+      <button class="settings-toggle" id="settingsToggle" type="button">
+        <span>⚙️ Cấu hình API <span class="key-status" id="keyStatus">⚠ chưa có key</span></span>
+        <span class="chev" id="chev">▾</span>
+      </button>
+      <div class="settings-body" id="settingsBody">
+        <p class="settings-hint">
+          Lấy key Groq <strong>miễn phí</strong> tại
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
+          (dạng <code>gsk_...</code>). Hoặc dùng key OpenAI <code>sk-...</code>.
+          Key chỉ lưu trên trình duyệt của bạn, không gửi đi đâu khác ngoài nhà cung cấp AI.
+        </p>
+        <label class="field-label" for="apiKey">API key</label>
+        <input type="password" id="apiKey" placeholder="gsk_... (Groq free) hoặc sk-... (OpenAI)" autocomplete="off" spellcheck="false" />
+        <label class="field-label" for="modelInput">Model — để trống sẽ tự chọn theo key</label>
+        <input type="text" id="modelInput" placeholder="vd: meta-llama/llama-4-scout-17b-16e-instruct" autocomplete="off" spellcheck="false" />
+        <button class="btn-ghost save-key" id="saveKeyBtn" type="button">💾 Lưu cấu hình</button>
+      </div>
+    </section>
+
+    <!-- INPUT -->
+    <section class="card input-card">
+      <h2>1 · Nhập thông tin</h2>
+
+      <label class="field-label" for="productInfo">Thông tin sản phẩm / nhu cầu</label>
+      <textarea id="productInfo" rows="5"
+        placeholder="VD: Khóa học tiếng Anh giao tiếp cho người đi làm bận rộn, học 15 phút/ngày qua app, giá 1.990.000đ. Đối thủ chính là các trung tâm offline đắt đỏ..."></textarea>
+
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="imageInput" accept="image/*" hidden />
+        <div class="dropzone-inner" id="dropzoneInner">
+          <span class="dz-icon">🖼️</span>
+          <p><strong>Kéo thả ảnh</strong> hoặc bấm để chọn</p>
+          <small>Ảnh sản phẩm, screenshot nhu cầu KH, moodboard... (tùy chọn)</small>
+        </div>
+        <div class="preview-wrap" id="previewWrap" hidden>
+          <img id="previewImg" alt="preview" />
+          <button type="button" class="remove-img" id="removeImg" title="Xóa ảnh">✕</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="generateBtn">
+        <span class="btn-text">✨ Tạo kế hoạch content</span>
+        <span class="spinner" hidden></span>
+      </button>
+      <p class="hint">Có thể nhập text, ảnh, hoặc cả hai. Càng cụ thể, output càng sắc.</p>
+      <div class="error-box" id="errorBox" hidden></div>
+    </section>
+
+    <!-- OUTPUT -->
+    <section class="output" id="output" hidden>
+      <div class="summary-card card" id="summaryCard"></div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="scripts">📝 Kịch bản content</button>
+        <button class="tab" data-tab="audience">🎯 Đối tượng</button>
+        <button class="tab" data-tab="channels">📡 Kênh triển khai</button>
+      </div>
+
+      <div class="tab-panel active" id="panel-scripts"></div>
+      <div class="tab-panel" id="panel-audience"></div>
+      <div class="tab-panel" id="panel-channels"></div>
+
+      <div class="output-actions">
+        <button class="btn-ghost" id="copyJsonBtn">📋 Copy JSON</button>
+        <button class="btn-ghost" id="downloadBtn">⬇️ Tải Markdown</button>
+      </div>
+    </section>
+
+    <div class="loading-state" id="loadingState" hidden>
+      <div class="skeleton-spinner"></div>
+      <p>Đang phân tích & viết kịch bản theo framework RBL...</p>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Umi Content Studio · framework RBL · powered by OpenAI</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
