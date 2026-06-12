@@ -33,19 +33,18 @@
         </span>
       </button>
       <div class="settings-body">
-        <p class="settings-hint">
-          Lấy key Groq <strong>miễn phí</strong> tại
-          <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
-          (dạng <code>gsk_…</code>) hoặc key OpenAI <code>sk-…</code>. Key chỉ lưu trên trình duyệt của bạn.
-        </p>
         <div class="settings-row">
-          <input type="password" id="apiKey" placeholder="Dán API key vào đây…" autocomplete="off" spellcheck="false" />
-          <button class="btn-save" id="saveKeyBtn" type="button" title="Lưu cấu hình">💾 Lưu</button>
+          <input type="password" id="apiKey" placeholder="Dán API key (gsk_… hoặc sk-…)" autocomplete="off" spellcheck="false" />
+          <button class="btn-save" id="saveKeyBtn" type="button" title="Lưu cấu hình">Lưu</button>
         </div>
-        <details class="adv">
-          <summary>Tùy chọn nâng cao</summary>
-          <input type="text" id="modelInput" placeholder="Model — để trống sẽ tự chọn theo key" autocomplete="off" spellcheck="false" />
-        </details>
+        <div class="settings-foot">
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener">Lấy key Groq miễn phí ↗</a>
+          <span>· chỉ lưu trên máy bạn</span>
+          <details class="adv">
+            <summary>Model</summary>
+            <input type="text" id="modelInput" placeholder="để trống = tự chọn theo key" autocomplete="off" spellcheck="false" />
+          </details>
+        </div>
       </div>
     </section>
 

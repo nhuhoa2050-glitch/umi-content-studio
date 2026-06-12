@@ -73,48 +73,52 @@ body {
   -webkit-backdrop-filter: blur(14px);
 }
 
-/* SETTINGS (compact) */
-.settings-card { margin-bottom: 18px; padding: 0; overflow: hidden; }
+/* SETTINGS (ultra compact) */
+.settings-card { margin-bottom: 14px; padding: 0; overflow: hidden; border-radius: 14px; }
 .settings-toggle {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
-  background: none; border: none; font-family: inherit; font-size: 15px; font-weight: 700;
-  color: var(--ink); padding: 15px 22px; cursor: pointer;
+  background: none; border: none; font-family: inherit; font-size: 14px; font-weight: 700;
+  color: var(--ink); padding: 11px 16px; cursor: pointer;
 }
-.st-left { display: flex; align-items: center; gap: 8px; }
-.gear { display: inline-block; transition: transform .4s; }
+.st-left { display: flex; align-items: center; gap: 7px; }
+.gear { display: inline-block; transition: transform .4s; font-size: 13px; }
 .settings-toggle:hover .gear { transform: rotate(90deg); }
-.st-right { display: flex; align-items: center; gap: 10px; }
-.key-status { font-size: 12px; font-weight: 700; padding: 3px 11px; border-radius: 50px; }
+.st-right { display: flex; align-items: center; gap: 9px; }
+.key-status { font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 50px; }
 .key-status.ok { background: #def3e6; color: #1c8a4c; }
 .key-status:not(.ok) { background: #fde7eb; color: #c02b48; }
-.chev { transition: transform .25s; color: var(--muted); font-size: 12px; }
+.chev { transition: transform .25s; color: var(--muted); font-size: 11px; }
 .settings-card.open .chev { transform: rotate(180deg); }
-.settings-body { padding: 0 22px 20px; display: none; animation: slidedown .25s ease; }
+.settings-body { padding: 2px 16px 14px; display: none; animation: slidedown .25s ease; }
 .settings-card.open .settings-body { display: block; }
 @keyframes slidedown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; } }
-.settings-hint { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
-.settings-hint a { color: var(--primary-d); font-weight: 600; }
-.settings-hint code { background: rgba(127,119,221,.12); padding: 1px 6px; border-radius: 5px; font-size: 12px; }
-.settings-row { display: flex; gap: 10px; align-items: stretch; }
+.settings-row { display: flex; gap: 8px; align-items: stretch; }
 .settings-row input {
-  flex: 1; font-family: inherit; font-size: 14px; color: var(--ink);
-  border: 1.5px solid var(--border); border-radius: 12px; padding: 11px 14px; background: #fff;
+  flex: 1; font-family: inherit; font-size: 13.5px; color: var(--ink);
+  border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; background: #fff;
   transition: border-color .15s;
 }
 .settings-row input:focus { outline: none; border-color: var(--primary); }
 .btn-save {
-  flex-shrink: 0; padding: 0 18px; border: none; border-radius: 12px;
+  flex-shrink: 0; padding: 0 16px; border: none; border-radius: 10px;
   background: linear-gradient(135deg, #7F77DD, #D4537E); color: #fff;
-  font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
   transition: transform .1s, box-shadow .15s; white-space: nowrap;
 }
 .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(127,119,221,.35); }
-.adv { margin-top: 12px; }
-.adv summary { font-size: 12px; color: var(--muted); cursor: pointer; user-select: none; width: max-content; }
+.settings-foot {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 8px; font-size: 11.5px; color: var(--muted);
+}
+.settings-foot a { color: var(--primary-d); font-weight: 600; }
+.adv { flex-basis: 100%; order: 9; }
+.adv summary { font-size: 11.5px; color: var(--muted); cursor: pointer; user-select: none; list-style: none; width: max-content; }
+.adv summary::-webkit-details-marker { display: none; }
+.adv summary::before { content: "⚙ "; }
 .adv summary:hover { color: var(--primary-d); }
 .adv input {
-  width: 100%; margin-top: 10px; font-family: inherit; font-size: 13px;
-  border: 1.5px solid var(--border); border-radius: 10px; padding: 9px 12px; background: #fff;
+  width: 100%; margin-top: 8px; font-family: inherit; font-size: 12.5px;
+  border: 1.5px solid var(--border); border-radius: 9px; padding: 8px 11px; background: #fff;
 }
 .adv input:focus { outline: none; border-color: var(--primary); }
 
