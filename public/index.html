@@ -3,59 +3,73 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Umi Content Studio — Viết content tự động</title>
+  <title>Umi Content Studio — Viết content tự động bằng AI</title>
+  <meta name="description" content="Nhập ảnh hoặc thông tin sản phẩm, AI tự đề xuất kịch bản content, đối tượng, kênh triển khai và image-brief đi kèm." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌊</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo">🌊</span>
-      <div>
-        <h1>Umi Content Studio</h1>
-        <p>Nhập ảnh nhu cầu hoặc thông tin sản phẩm → tự động ra kịch bản, đối tượng, kênh & ảnh đi kèm</p>
-      </div>
+  <div class="bg-orbs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">✨ AI Content · framework RBL</div>
+      <h1>Biến <span class="grad-text">một ý tưởng</span> thành cả chiến dịch content</h1>
+      <p class="hero-sub">Nhập ảnh nhu cầu hoặc thông tin sản phẩm — AI tự đề xuất <strong>kịch bản</strong>, <strong>đối tượng</strong>, <strong>kênh triển khai</strong> và <strong>ảnh đi kèm</strong>.</p>
     </div>
   </header>
 
   <main class="container">
-    <!-- SETTINGS / API KEY -->
+    <!-- SETTINGS / API KEY (compact) -->
     <section class="card settings-card">
       <button class="settings-toggle" id="settingsToggle" type="button">
-        <span>⚙️ Cấu hình API <span class="key-status" id="keyStatus">⚠ chưa có key</span></span>
-        <span class="chev" id="chev">▾</span>
+        <span class="st-left"><span class="gear">⚙️</span> Cấu hình API</span>
+        <span class="st-right">
+          <span class="key-status" id="keyStatus">⚠ chưa có key</span>
+          <span class="chev">▾</span>
+        </span>
       </button>
-      <div class="settings-body" id="settingsBody">
+      <div class="settings-body">
         <p class="settings-hint">
           Lấy key Groq <strong>miễn phí</strong> tại
           <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>
-          (dạng <code>gsk_...</code>). Hoặc dùng key OpenAI <code>sk-...</code>.
-          Key chỉ lưu trên trình duyệt của bạn, không gửi đi đâu khác ngoài nhà cung cấp AI.
+          (dạng <code>gsk_…</code>) hoặc key OpenAI <code>sk-…</code>. Key chỉ lưu trên trình duyệt của bạn.
         </p>
-        <label class="field-label" for="apiKey">API key</label>
-        <input type="password" id="apiKey" placeholder="gsk_... (Groq free) hoặc sk-... (OpenAI)" autocomplete="off" spellcheck="false" />
-        <label class="field-label" for="modelInput">Model — để trống sẽ tự chọn theo key</label>
-        <input type="text" id="modelInput" placeholder="vd: meta-llama/llama-4-scout-17b-16e-instruct" autocomplete="off" spellcheck="false" />
-        <button class="btn-ghost save-key" id="saveKeyBtn" type="button">💾 Lưu cấu hình</button>
+        <div class="settings-row">
+          <input type="password" id="apiKey" placeholder="Dán API key vào đây…" autocomplete="off" spellcheck="false" />
+          <button class="btn-save" id="saveKeyBtn" type="button" title="Lưu cấu hình">💾 Lưu</button>
+        </div>
+        <details class="adv">
+          <summary>Tùy chọn nâng cao</summary>
+          <input type="text" id="modelInput" placeholder="Model — để trống sẽ tự chọn theo key" autocomplete="off" spellcheck="false" />
+        </details>
       </div>
     </section>
 
     <!-- INPUT -->
     <section class="card input-card">
-      <h2>1 · Nhập thông tin</h2>
+      <div class="step-head"><span class="step-num">1</span><h2>Nhập thông tin</h2></div>
 
       <label class="field-label" for="productInfo">Thông tin sản phẩm / nhu cầu</label>
       <textarea id="productInfo" rows="5"
-        placeholder="VD: Khóa học tiếng Anh giao tiếp cho người đi làm bận rộn, học 15 phút/ngày qua app, giá 1.990.000đ. Đối thủ chính là các trung tâm offline đắt đỏ..."></textarea>
+        placeholder="VD: Khóa học tiếng Anh giao tiếp cho người đi làm bận rộn, học 15 phút/ngày qua app, giá 1.990.000đ. Đối thủ chính là các trung tâm offline đắt đỏ…"></textarea>
+
+      <div class="example-chips">
+        <span class="chip-label">Thử nhanh:</span>
+        <button class="chip" type="button" data-ex="Khóa học tiếng Anh giao tiếp cho người đi làm bận rộn, học 15 phút/ngày qua app, giá 1.990.000đ.">Khóa học online</button>
+        <button class="chip" type="button" data-ex="Serum dưỡng da chiết xuất rau má cho da nhạy cảm, dịu mụn sau 7 ngày, giá 320.000đ, bán trên TikTok Shop.">Mỹ phẩm</button>
+        <button class="chip" type="button" data-ex="Quán cà phê specialty mới mở ở Đà Nẵng, không gian làm việc yên tĩnh, hạt rang mộc, hướng tới dân văn phòng và freelancer.">Quán cà phê</button>
+      </div>
 
       <div class="dropzone" id="dropzone">
         <input type="file" id="imageInput" accept="image/*" hidden />
         <div class="dropzone-inner" id="dropzoneInner">
           <span class="dz-icon">🖼️</span>
           <p><strong>Kéo thả ảnh</strong> hoặc bấm để chọn</p>
-          <small>Ảnh sản phẩm, screenshot nhu cầu KH, moodboard... (tùy chọn)</small>
+          <small>Ảnh sản phẩm, screenshot nhu cầu KH, moodboard… (tùy chọn)</small>
         </div>
         <div class="preview-wrap" id="previewWrap" hidden>
           <img id="previewImg" alt="preview" />
@@ -92,13 +106,14 @@
     </section>
 
     <div class="loading-state" id="loadingState" hidden>
-      <div class="skeleton-spinner"></div>
-      <p>Đang phân tích & viết kịch bản theo framework RBL...</p>
+      <div class="loader-wave"><span></span><span></span><span></span><span></span><span></span></div>
+      <p class="loading-title">Đang phân tích & viết kịch bản…</p>
+      <p class="loading-cycle" id="loadingCycle">Đọc thông tin sản phẩm</p>
     </div>
   </main>
 
   <footer class="footer">
-    <p>Umi Content Studio · framework RBL · powered by OpenAI</p>
+    <p>🌊 Umi Content Studio · framework RBL · chạy trên Groq / OpenAI</p>
   </footer>
 
   <script src="app.js"></script>

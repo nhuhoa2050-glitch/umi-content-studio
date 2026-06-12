@@ -58,6 +58,44 @@ els.saveKeyBtn.addEventListener("click", () => {
 els.apiKey.addEventListener("input", updateKeyStatus);
 loadKey();
 
+// ---------- Example chips ----------
+document.querySelectorAll(".chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    els.productInfo.value = chip.dataset.ex;
+    els.productInfo.focus();
+    els.productInfo.dispatchEvent(new Event("input"));
+  });
+});
+
+// ---------- Loading cycle text ----------
+const LOADING_MSGS = [
+  "Đọc thông tin sản phẩm…",
+  "Phác hoạ chân dung khách hàng…",
+  "Chọn kênh & tầng phễu phù hợp…",
+  "Viết hook 3 giây đầu…",
+  "Soạn image-brief đi kèm…",
+  "Tinh chỉnh theo framework RBL…",
+];
+let loadingTimer = null;
+function startLoadingCycle() {
+  const el = $("loadingCycle");
+  if (!el) return;
+  let i = 0;
+  el.textContent = LOADING_MSGS[0];
+  loadingTimer = setInterval(() => {
+    i = (i + 1) % LOADING_MSGS.length;
+    el.style.opacity = "0";
+    setTimeout(() => {
+      el.textContent = LOADING_MSGS[i];
+      el.style.opacity = "1";
+    }, 250);
+  }, 2200);
+}
+function stopLoadingCycle() {
+  if (loadingTimer) clearInterval(loadingTimer);
+  loadingTimer = null;
+}
+
 // ---------- Image upload ----------
 els.dropzone.addEventListener("click", (e) => {
   if (e.target === els.removeImg) return;
@@ -145,6 +183,8 @@ function setLoading(on) {
   els.generateBtn.querySelector(".btn-text").hidden = on;
   els.generateBtn.querySelector(".spinner").hidden = !on;
   els.loadingState.hidden = !on;
+  if (on) startLoadingCycle();
+  else stopLoadingCycle();
 }
 function showError(msg) {
   els.errorBox.textContent = "⚠ " + msg;
